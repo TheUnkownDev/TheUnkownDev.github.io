@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. — The Holographic AI Assistant by TheUnknownDev</title>
+    <meta name="description" content="J.A.R.V.I.S. is a free, open-source, voice-activated AI assistant with a stunning holographic HUD, powered by Groq or Google Gemini. Built for Windows, macOS and Linux.">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: rgba(255,255,255,0.03);
+            --surface-hover: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.07);
+            --border-bright: rgba(0,243,255,0.25);
+            --neon: #00f3ff;
+            --neon-dim: rgba(0,243,255,0.15);
+            --red: #ff3c3c;
+            --red-dim: rgba(255,60,60,0.12);
+            --text: #e8eaed;
+            --muted: #6b7280;
+            --muted2: #9ca3af;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===================== SCROLLBAR ===================== */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,243,255,0.3); border-radius: 2px; }
+
+        /* ===================== CURSOR ===================== */
+        .cursor {
+            width: 28px; height: 28px;
+            border: 1.5px solid var(--red);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            left: -50px; top: -50px;
+            transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275), border-color 0.2s;
+            animation: cursor-pulse 2.5s infinite;
+        }
+        .cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 4px; height: 4px;
+            background: var(--red);
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .cursor.on { transform: scale(1.5); border-color: var(--neon); }
+        .cursor.on::after { background: var(--neon); }
+        @keyframes cursor-pulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(255,60,60,0.3); }
+            50% { box-shadow: 0 0 0 8px rgba(255,60,60,0); }
+        }
+
+        /* ===================== NAVBAR ===================== */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+        .nav-inner {
+            max-width: 1100px; margin: 0 auto;
+            padding: 14px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav-brand {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem; font-weight: 600;
+            color: #fff; text-decoration: none;
+            letter-spacing: -0.3px;
+        }
+        .nav-brand span { color: var(--neon); }
+        .nav-links { display: flex; gap: 6px; }
+        .nav-link {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-decoration: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .nav-link:hover { color: #fff; border-color: var(--border); background: var(--surface); }
+        .nav-link.active { color: var(--neon); background: var(--neon-dim); border-color: var(--border-bright); }
+
+        /* ===================== HERO ===================== */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-align: center;
+            padding: 80px 24px 60px;
+            overflow: hidden;
+        }
+
+        /* Animated grid background */
+        .hero-grid {
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(0,243,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,243,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+            animation: grid-drift 20s linear infinite;
+        }
+        @keyframes grid-drift {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(60px); }
+        }
+
+        /* Scanline overlay */
+        .hero::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.08) 2px,
+                rgba(0,0,0,0.08) 4px
+            );
+            pointer-events: none;
+        }
+
+        /* Arc reactor ring */
+        .arc-reactor {
+            position: relative;
+            width: 180px; height: 180px;
+            margin-bottom: 40px;
+            flex-shrink: 0;
+        }
+        .arc-reactor svg {
+            width: 100%; height: 100%;
+            animation: arc-spin 12s linear infinite;
+        }
+        @keyframes arc-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .arc-reactor svg.counter {
+            position: absolute; inset: 0;
+            animation: arc-spin 8s linear infinite reverse;
+        }
+        .arc-core {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px; height: 60px;
+            background: radial-gradient(circle, rgba(0,243,255,0.9) 0%, rgba(0,243,255,0.3) 50%, transparent 70%);
+            border-radius: 50%;
+            animation: core-breathe 3s ease-in-out infinite;
+            box-shadow: 0 0 40px rgba(0,243,255,0.6), 0 0 80px rgba(0,243,255,0.2);
+        }
+        @keyframes core-breathe {
+            0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%,-50%) scale(1.15); opacity: 0.8; }
+        }
+
+        .hero-tag {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--neon);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            position: relative; z-index: 1;
+            opacity: 0;
+            animation: fade-up 0.8s 0.2s ease forwards;
+        }
+        .hero h1 {
+            font-size: clamp(2.8rem, 8vw, 5.5rem);
+            font-weight: 700;
+            letter-spacing: -3px;
+            line-height: 1;
+            text-transform: uppercase;
+            position: relative; z-index: 1;
+            opacity: 0;
+            animation: fade-up 0.8s 0.4s ease forwards;
+        }
+        .hero h1 .glow-text {
+            background: linear-gradient(135deg, #fff 30%, var(--neon) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-sub {
+            font-size: 1.1rem;
+            color: var(--muted2);
+            max-width: 560px;
+            margin-top: 18px;
+            font-weight: 300;
+            position: relative; z-index: 1;
+            opacity: 0;
+            animation: fade-up 0.8s 0.6s ease forwards;
+        }
+        .hero-sub #typed-text::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+            color: var(--neon);
+        }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .hero-ctas {
+            display: flex; gap: 14px; flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 36px;
+            position: relative; z-index: 1;
+            opacity: 0;
+            animation: fade-up 0.8s 0.8s ease forwards;
+        }
+
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===================== BUTTONS ===================== */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 13px 24px;
+            border-radius: 8px;
+            font-size: 0.88rem; font-weight: 600;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.25,1,0.5,1);
+            cursor: pointer; border: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-neon {
+            background: var(--neon);
+            color: #000;
+        }
+        .btn-neon:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(0,243,255,0.5), 0 8px 24px rgba(0,0,0,0.4);
+            text-decoration: none; color: #000;
+        }
+        .btn-ghost {
+            background: var(--surface);
+            color: #fff;
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover {
+            transform: translateY(-3px);
+            background: var(--surface-hover);
+            border-color: rgba(255,255,255,0.15);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            text-decoration: none; color: #fff;
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--neon);
+            border: 1px solid var(--border-bright);
+        }
+        .btn-outline:hover {
+            transform: translateY(-3px);
+            background: var(--neon-dim);
+            box-shadow: 0 0 20px rgba(0,243,255,0.2);
+            text-decoration: none; color: var(--neon);
+        }
+
+        /* ===================== SECTION BASE ===================== */
+        section { padding: 100px 24px; }
+        .section-inner { max-width: 1100px; margin: 0 auto; }
+        .section-label {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            color: var(--neon);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            margin-bottom: 16px;
+            line-height: 1.15;
+        }
+        .section-desc {
+            color: var(--muted2);
+            max-width: 520px;
+            font-size: 1rem;
+            font-weight: 300;
+        }
+        .section-head { margin-bottom: 56px; }
+
+        /* ===================== SCROLL REVEAL ===================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+        .reveal-delay-6 { transition-delay: 0.6s; }
+
+        /* ===================== FEATURE CARDS ===================== */
+        #features { border-top: 1px solid var(--border); }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,243,255,0.4), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .feature-card:hover {
+            border-color: var(--border-bright);
+            background: var(--surface-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 30px rgba(0,243,255,0.05);
+        }
+        .feature-card:hover::before { opacity: 1; }
+
+        .feature-icon {
+            width: 44px; height: 44px;
+            background: var(--neon-dim);
+            border: 1px solid var(--border-bright);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 18px;
+            font-size: 1.3rem;
+        }
+        .feature-card h3 {
+            font-size: 1rem; font-weight: 600;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .feature-card p {
+            font-size: 0.875rem;
+            color: var(--muted2);
+            line-height: 1.6;
+        }
+
+        /* ===================== ENGINE CARDS ===================== */
+        #engines { border-top: 1px solid var(--border); }
+        .engines-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .engine-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .engine-card:hover {
+            border-color: var(--border-bright);
+            transform: translateY(-3px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+        }
+        .engine-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            color: var(--neon);
+            background: var(--neon-dim);
+            border: 1px solid var(--border-bright);
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .engine-badge.recommended { color: #fbbf24; background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); }
+        .engine-card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; }
+        .engine-card p { color: var(--muted2); font-size: 0.9rem; margin-bottom: 20px; }
+        .engine-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--neon);
+            text-decoration: none;
+            border: 1px solid var(--border-bright);
+            padding: 7px 14px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .engine-link:hover {
+            background: var(--neon-dim);
+            text-decoration: none;
+        }
+
+        /* ===================== INSTALL SECTION ===================== */
+        #install { border-top: 1px solid var(--border); }
+        .platform-tabs {
+            display: flex; gap: 8px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .platform-tab {
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem; font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--muted2);
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .platform-tab:hover { color: #fff; border-color: rgba(255,255,255,0.15); }
+        .platform-tab.active {
+            color: var(--neon);
+            border-color: var(--border-bright);
+            background: var(--neon-dim);
+        }
+
+        .platform-panel { display: none; }
+        .platform-panel.active { display: block; }
+
+        .install-steps { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .install-step {
+            display: flex; gap: 20px; align-items: flex-start;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px 24px;
+            transition: border-color 0.2s;
+        }
+        .install-step:hover { border-color: rgba(0,243,255,0.15); }
+        .step-num {
+            flex-shrink: 0;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: var(--neon-dim);
+            border: 1px solid var(--border-bright);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--neon);
+            font-weight: 600;
+        }
+        .step-body { flex: 1; }
+        .step-body h4 { font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 8px; }
+        .step-body p { font-size: 0.875rem; color: var(--muted2); margin-bottom: 10px; }
+
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: #f8f8f2;
+            overflow-x: auto;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { color: var(--neon); border-color: var(--border-bright); }
+        .copy-btn.copied { color: #4ade80; border-color: rgba(74,222,128,0.4); }
+
+        .zip-option {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(0,243,255,0.03);
+            border: 1px solid rgba(0,243,255,0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+        .zip-option p { margin: 0; font-size: 0.85rem; color: var(--muted2); }
+        .zip-option a { color: var(--neon); text-decoration: none; font-weight: 500; }
+        .zip-option a:hover { text-decoration: underline; }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: rgba(255,255,255,0.07);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            color: #ff79c6;
+        }
+
+        /* ENV file example */
+        .env-sample {
+            background: #050505;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+        }
+        .env-comment { color: var(--muted); }
+        .env-key { color: #ff79c6; }
+        .env-eq { color: var(--muted2); }
+        .env-val { color: #4ade80; }
+
+        /* Maintenance notice */
+        .notice {
+            display: flex; gap: 14px; align-items: flex-start;
+            background: rgba(251,191,36,0.04);
+            border: 1px dashed rgba(251,191,36,0.3);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+        .notice-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+        .notice p { font-size: 0.875rem; color: #d4a928; margin: 0; }
+
+        /* ===================== USAGE SECTION ===================== */
+        #usage { border-top: 1px solid var(--border); }
+        .usage-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .usage-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            transition: all 0.3s;
+        }
+        .usage-card:hover {
+            border-color: rgba(0,243,255,0.15);
+            transform: translateY(-3px);
+        }
+        .usage-card .label {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            color: var(--neon);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .usage-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: #fff; }
+        .usage-card p { font-size: 0.875rem; color: var(--muted2); line-height: 1.6; }
+
+        /* ===================== STARK QUOTE ===================== */
+        .stark-quote {
+            border-left: 3px solid var(--red);
+            padding: 16px 20px;
+            background: var(--red-dim);
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #e1e1e1;
+            margin: 40px 0;
+            font-size: 0.95rem;
+        }
+
+        /* ===================== TROUBLESHOOT ===================== */
+        #troubleshoot { border-top: 1px solid var(--border); }
+        .trouble-list { display: flex; flex-direction: column; gap: 14px; }
+        .trouble-item {
+            display: flex; gap: 16px; align-items: flex-start;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+        .trouble-item:hover { border-color: rgba(255,255,255,0.12); }
+        .trouble-dot {
+            flex-shrink: 0;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--red);
+            margin-top: 7px;
+        }
+        .trouble-item h4 { font-size: 0.9rem; font-weight: 600; color: #fff; margin-bottom: 5px; }
+        .trouble-item p { font-size: 0.85rem; color: var(--muted2); }
+
+        /* ===================== FOOTER ===================== */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 48px 24px;
+        }
+        .footer-inner {
+            max-width: 1100px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 20px;
+        }
+        .footer-brand {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .footer-brand span { color: var(--neon); }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-link {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-link:hover { color: var(--neon); }
+        .footer-copy {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+            color: #333;
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            max-width: 1100px; margin: 24px auto 0;
+        }
+
+        /* ===================== SECTION HIGHLIGHT (install scroll) ===================== */
+        @keyframes section-ping {
+            0%   { box-shadow: 0 0 0 0 rgba(0,243,255,0.5), 0 0 30px rgba(0,243,255,0.3); border-color: var(--neon); }
+            60%  { box-shadow: 0 0 0 10px rgba(0,243,255,0), 0 0 40px rgba(0,243,255,0.1); }
+            100% { box-shadow: none; border-color: var(--border); }
+        }
+        .ping { animation: section-ping 1.4s ease forwards; }
+
+        /* ===================== RESPONSIVE ===================== */
+        @media (max-width: 900px) {
+            .features-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .features-grid { grid-template-columns: 1fr; }
+            .engines-grid { grid-template-columns: 1fr; }
+            .usage-grid { grid-template-columns: 1fr; }
+            .cursor { display: none; }
+            .nav-links { gap: 4px; }
+            .nav-link { padding: 4px 8px; font-size: 0.72rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<!-- ==================== NAVBAR ==================== -->
+<nav>
+    <div class="nav-inner">
+        <a href="./" class="nav-brand interactive">THEUNKNOWN<span>DEV</span></a>
+        <div class="nav-links">
+            <a href="./" class="nav-link interactive">Home</a>
+            <a href="#" class="nav-link active interactive">JARVIS</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="home">
+    <div class="hero-grid"></div>
+
+    <div class="arc-reactor">
+        <svg viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="90" cy="90" r="82" stroke="rgba(0,243,255,0.12)" stroke-width="1"/>
+            <circle cx="90" cy="90" r="82" stroke="rgba(0,243,255,0.6)" stroke-width="1.5" stroke-dasharray="80 120 30 80" stroke-linecap="round"/>
+            <circle cx="90" cy="90" r="70" stroke="rgba(0,243,255,0.08)" stroke-width="1"/>
+            <circle cx="90" cy="90" r="70" stroke="rgba(0,243,255,0.4)" stroke-width="1" stroke-dasharray="40 200 20 50" stroke-linecap="round"/>
+        </svg>
+        <svg class="counter" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="90" cy="90" r="58" stroke="rgba(255,60,60,0.3)" stroke-width="1" stroke-dasharray="30 60 15 90" stroke-linecap="round"/>
+        </svg>
+        <div class="arc-core"></div>
+    </div>
+
+    <div class="hero-tag">// Open-Source AI Assistant</div>
+    <h1><span class="glow-text">J.A.R.V.I.S.</span></h1>
+    <p class="hero-sub"><span id="typed-text"></span></p>
+
+    <div class="hero-ctas">
+        <a href="#install" class="btn btn-neon interactive" id="hero-download-win">
+            ⬇ Get Started — Windows
+        </a>
+        <a href="#features" class="btn btn-ghost interactive">
+            Explore Features
+        </a>
+        <a href="https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant" target="_blank" class="btn btn-outline interactive">
+            ★ View on GitHub
+        </a>
+    </div>
+</section>
+
+<!-- ==================== FEATURES ==================== -->
+<section id="features">
+    <div class="section-inner">
+        <div class="section-head reveal">
+            <span class="section-label">// capabilities</span>
+            <h2 class="section-title">Built different.<br>By design.</h2>
+            <p class="section-desc">Not another chatbot. JARVIS is a fully local, voice-activated AI system with a cinematic HUD — running on your machine, on your terms.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">🎙️</div>
+                <h3>Wake Word Activation</h3>
+                <p>Just say "Jarvis" and start talking. No clicks, no typing — it listens the moment you speak.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon">🌐</div>
+                <h3>Holographic HUD</h3>
+                <p>A stunning glassmorphism overlay rendered by Electron — looks exactly like the movies, runs on your desktop.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon">⚡</div>
+                <h3>Dual AI Engine</h3>
+                <p>Switch between Groq's ultra-fast inference or Google Gemini's massive context window — or run both simultaneously.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-4">
+                <div class="feature-icon">🛑</div>
+                <h3>Instant Interrupt</h3>
+                <p>Click the JARVIS core at any moment to instantly stop a response mid-sentence. Full control, always.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-5">
+                <div class="feature-icon">🖥️</div>
+                <h3>Cross-Platform</h3>
+                <p>Windows, macOS, and Linux supported out of the box. One codebase, every machine.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-6">
+                <div class="feature-icon">🔓</div>
+                <h3>Fully Open Source</h3>
+                <p>MIT licensed. Fork it, mod it, break it, rebuild it. The source is yours — no black boxes.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== AI ENGINES ==================== -->
+<section id="engines">
+    <div class="section-inner">
+        <div class="section-head reveal">
+            <span class="section-label">// step 1 — api key</span>
+            <h2 class="section-title">Pick your AI engine.</h2>
+            <p class="section-desc">JARVIS runs on free API keys — no subscriptions, no hardware. Just grab a key and go.</p>
+        </div>
+
+        <div class="stark-quote reveal">
+            "Give me a few hours. I'll have something better figured out." — Tony Stark
+        </div>
+
+        <div class="engines-grid">
+            <div class="engine-card reveal reveal-delay-1">
+                <div class="engine-badge recommended">⭐ Recommended for speed</div>
+                <h3>Groq API</h3>
+                <p>Blazing fast inference using custom LPU hardware. Get responses in under a second, completely free on the standard tier.</p>
+                <a href="https://console.groq.com/keys" target="_blank" class="engine-link interactive">
+                    → Get Groq API Key
+                </a>
+            </div>
+            <div class="engine-card reveal reveal-delay-2">
+                <div class="engine-badge">⭐ Best context window</div>
+                <h3>Google Gemini API</h3>
+                <p>Massive context window and deep multi-turn reasoning. Ideal for long conversations and complex tasks. Free via AI Studio.</p>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="engine-link interactive">
+                    → Get Gemini API Key
+                </a>
+            </div>
+        </div>
+
+        <p style="margin-top: 20px; font-family: 'Fira Code', monospace; font-size: 0.8rem; color: var(--muted); text-align: center;" class="reveal">
+            // if both keys are set, JARVIS will automatically prioritize Gemini
+        </p>
+    </div>
+</section>
+
+<!-- ==================== INSTALL ==================== -->
+<section id="install">
+    <div class="section-inner">
+        <div class="section-head reveal">
+            <span class="section-label">// step 2 — installation</span>
+            <h2 class="section-title">Up and running<br>in under 5 minutes.</h2>
+            <p class="section-desc">Choose your platform and follow the steps. A single script handles everything else.</p>
+        </div>
+
+        <div class="notice reveal">
+            <span class="notice-icon">⚠️</span>
+            <p><strong>Pre-built installer under maintenance</strong> — The <code>.exe</code> installer and <code>.zip</code> portable are being updated. For now, the script install below takes less than 5 minutes and works on any machine.</p>
+        </div>
+
+        <div class="platform-tabs reveal">
+            <button class="platform-tab active interactive" data-tab="windows" id="tab-windows">🪟 Windows</button>
+            <button class="platform-tab interactive" data-tab="macos" id="tab-macos">🍎 macOS</button>
+            <button class="platform-tab interactive" data-tab="linux" id="tab-linux">🐧 Linux</button>
+        </div>
+
+        <!-- WINDOWS -->
+        <div class="platform-panel active" id="panel-windows">
+            <div class="install-steps">
+                <div class="install-step">
+                    <div class="step-num">01</div>
+                    <div class="step-body">
+                        <h4>Get the source code</h4>
+                        <p><strong>Option A — Clone with Git:</strong></p>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="git clone https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant.git&#10;cd J.A.R.V.I.S.-AI-Assistant">copy</button>
+                            git clone https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant.git<br>
+                            cd J.A.R.V.I.S.-AI-Assistant
+                        </div>
+                        <div class="zip-option" style="margin-top: 12px;">
+                            <span>📦</span>
+                            <p><strong>Option B:</strong> <a href="https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant/archive/refs/heads/master.zip" class="interactive">Download ZIP archive</a> — extract the folder, open it.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">02</div>
+                    <div class="step-body">
+                        <h4>Run the installer</h4>
+                        <p>Double-click <code>install_windows.bat</code> and wait for <strong>"INSTALLATION COMPLETE!"</strong>. It sets up your virtual environment and installs all Python dependencies automatically.</p>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">03</div>
+                    <div class="step-body">
+                        <h4>Configure your API key</h4>
+                        <p>Rename <code>.env.example</code> → <code>.env</code>, then paste your key(s):</p>
+                        <div class="env-sample">
+                            <span class="env-comment"># Paste your key(s) below — you only need one</span><br>
+                            <span class="env-key">GROQ_API_KEY</span><span class="env-eq">=</span><span class="env-val">"your_groq_key_here"</span><br>
+                            <span class="env-key">GOOGLE_API_KEY</span><span class="env-eq">=</span><span class="env-val">"your_gemini_key_here"</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">04</div>
+                    <div class="step-body">
+                        <h4>Launch JARVIS</h4>
+                        <p>Double-click <code>launch_jarvis.bat</code>. The HUD will boot and JARVIS will start listening.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MACOS -->
+        <div class="platform-panel" id="panel-macos">
+            <div class="install-steps">
+                <div class="install-step">
+                    <div class="step-num">01</div>
+                    <div class="step-body">
+                        <h4>Get the source code</h4>
+                        <p><strong>Option A — Clone with Git:</strong></p>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="git clone https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant.git&#10;cd J.A.R.V.I.S.-AI-Assistant">copy</button>
+                            git clone https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant.git<br>
+                            cd J.A.R.V.I.S.-AI-Assistant
+                        </div>
+                        <div class="zip-option" style="margin-top: 12px;">
+                            <span>📦</span>
+                            <p><strong>Option B:</strong> <a href="https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant/archive/refs/heads/master.zip" class="interactive">Download ZIP archive</a> — extract and open in terminal.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">02</div>
+                    <div class="step-body">
+                        <h4>Run the installer</h4>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="sh install_mac.sh">copy</button>
+                            sh install_mac.sh
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">03</div>
+                    <div class="step-body">
+                        <h4>Configure your API key</h4>
+                        <p>Rename <code>.env.example</code> → <code>.env</code> and paste your key(s):</p>
+                        <div class="env-sample">
+                            <span class="env-key">GROQ_API_KEY</span><span class="env-eq">=</span><span class="env-val">"your_groq_key_here"</span><br>
+                            <span class="env-key">GOOGLE_API_KEY</span><span class="env-eq">=</span><span class="env-val">"your_gemini_key_here"</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">04</div>
+                    <div class="step-body">
+                        <h4>Launch JARVIS</h4>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="sh launch_jarvis.sh">copy</button>
+                            sh launch_jarvis.sh
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LINUX -->
+        <div class="platform-panel" id="panel-linux">
+            <div class="install-steps">
+                <div class="install-step">
+                    <div class="step-num">01</div>
+                    <div class="step-body">
+                        <h4>Clone the repository</h4>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="git clone https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant.git&#10;cd J.A.R.V.I.S.-AI-Assistant">copy</button>
+                            git clone https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant.git<br>
+                            cd J.A.R.V.I.S.-AI-Assistant
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">02</div>
+                    <div class="step-body">
+                        <h4>Install audio dependencies</h4>
+                        <p>PyAudio requires native system libraries on Linux:</p>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="sudo apt-get install python3-pyaudio portaudio19-dev">copy</button>
+                            sudo apt-get install python3-pyaudio portaudio19-dev
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">03</div>
+                    <div class="step-body">
+                        <h4>Run the installer</h4>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="sh install_linux.sh">copy</button>
+                            sh install_linux.sh
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">04</div>
+                    <div class="step-body">
+                        <h4>Configure your API key</h4>
+                        <p>Rename <code>.env.example</code> → <code>.env</code> and paste your key(s).</p>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-num">05</div>
+                    <div class="step-body">
+                        <h4>Launch JARVIS</h4>
+                        <div class="code-block" style="position:relative">
+                            <button class="copy-btn" data-copy="sh launch_jarvis.sh">copy</button>
+                            sh launch_jarvis.sh
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== USAGE ==================== -->
+<section id="usage">
+    <div class="section-inner">
+        <div class="section-head reveal">
+            <span class="section-label">// step 3 — how to use</span>
+            <h2 class="section-title">Talk to it.<br>It listens.</h2>
+            <p class="section-desc">JARVIS is designed to feel natural. No menus, no configuration panels — just your voice.</p>
+        </div>
+
+        <div class="stark-quote reveal">
+            "JARVIS, it's time for a little upgrade." — Tony Stark
+        </div>
+
+        <div class="usage-grid">
+            <div class="usage-card reveal reveal-delay-1">
+                <span class="label">// activate</span>
+                <h3>Wake Word</h3>
+                <p>Say <strong>"Jarvis"</strong> to get its attention, then speak your command naturally. No push-to-talk button required.</p>
+            </div>
+            <div class="usage-card reveal reveal-delay-2">
+                <span class="label">// compact mode</span>
+                <h3>Mini HUD</h3>
+                <p>Hit the <code>[MINI]</code> button to shrink the HUD into a slim overlay. Perfect for multitasking without losing JARVIS.</p>
+            </div>
+            <div class="usage-card reveal reveal-delay-3">
+                <span class="label">// stop output</span>
+                <h3>Interrupt Anytime</h3>
+                <p>Click the central JARVIS core orb at any time to immediately cut off a long response mid-sentence.</p>
+            </div>
+            <div class="usage-card reveal reveal-delay-4">
+                <span class="label">// developer mode</span>
+                <h3>Live Debug Logs</h3>
+                <p>Say <strong>"Jarvis, enter debugging mode"</strong> to see real-time system logs — useful for tweaking or troubleshooting.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== TROUBLESHOOT ==================== -->
+<section id="troubleshoot">
+    <div class="section-inner">
+        <div class="section-head reveal">
+            <span class="section-label">// known issues</span>
+            <h2 class="section-title">Something not<br>working?</h2>
+            <p class="section-desc">Here are the most common issues and how to fix them in under a minute.</p>
+        </div>
+
+        <div class="stark-quote reveal">
+            "I'm going to need a little time to work on that." — Tony Stark
+        </div>
+
+        <div class="trouble-list">
+            <div class="trouble-item reveal reveal-delay-1">
+                <div class="trouble-dot"></div>
+                <div>
+                    <h4>Microphone not detected</h4>
+                    <p>Go to your OS sound settings and set your microphone as the <strong>default input device</strong>. JARVIS uses the system default — no manual device selection yet.</p>
+                </div>
+            </div>
+            <div class="trouble-item reveal reveal-delay-2">
+                <div class="trouble-dot"></div>
+                <div>
+                    <h4>Backend fails to start / API error</h4>
+                    <p>Check that your <code>.env</code> file exists (not <code>.env.example</code>) and that at least one key — <code>GROQ_API_KEY</code> or <code>GOOGLE_API_KEY</code> — is set correctly with no extra spaces.</p>
+                </div>
+            </div>
+            <div class="trouble-item reveal reveal-delay-3">
+                <div class="trouble-dot"></div>
+                <div>
+                    <h4>HUD doesn't open / blank window</h4>
+                    <p>Run <code>npm install</code> inside the <code>ui/</code> folder first. Electron dependencies must be installed separately from the Python backend.</p>
+                </div>
+            </div>
+            <div class="trouble-item reveal reveal-delay-4">
+                <div class="trouble-dot"></div>
+                <div>
+                    <h4>PyAudio install fails on Linux</h4>
+                    <p>Install the native libraries first: <code>sudo apt-get install python3-pyaudio portaudio19-dev</code>, then re-run the installer script.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            THEUNKNOWN<span>DEV</span> // JARVIS v0.1 // MIT LICENSE
+        </div>
+        <div class="footer-links">
+            <a href="https://github.com/TheUnkownDev/J.A.R.V.I.S.-AI-Assistant" target="_blank" class="footer-link interactive">GitHub</a>
+            <a href="https://theunknowndev.is-a.dev" class="footer-link interactive">Portfolio</a>
+            <a href="#install" class="footer-link interactive">Install</a>
+        </div>
+    </div>
+    <div class="footer-copy">
+        © 2026 THEUNKNOWNDEV — Inspired by the MCU. Developed for the future.
+    </div>
+</footer>
+
+<script>
+// ===================== CURSOR =====================
+const cursor = document.getElementById('cursor');
+let mx = 0, my = 0, cx = 0, cy = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+(function loop() {
+    cx += (mx - cx) * 0.14;
+    cy += (my - cy) * 0.14;
+    cursor.style.left = (cx - 14) + 'px';
+    cursor.style.top  = (cy - 14) + 'px';
+    requestAnimationFrame(loop);
+})();
+document.querySelectorAll('.interactive').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('on'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('on'));
+});
+
+// ===================== TYPING HERO =====================
+const phrases = [
+    'Voice-activated. Holographic. Free.',
+    'Powered by Groq & Google Gemini.',
+    'Built for Windows, macOS & Linux.',
+    'Open source. MIT licensed. Forever.',
+];
+let pi = 0, ci = 0, deleting = false, pause = 0;
+const el = document.getElementById('typed-text');
+function type() {
+    if (pause > 0) { pause--; setTimeout(type, 60); return; }
+    const phrase = phrases[pi];
+    if (!deleting) {
+        el.textContent = phrase.slice(0, ++ci);
+        if (ci === phrase.length) { deleting = true; pause = 28; }
+        setTimeout(type, 65);
+    } else {
+        el.textContent = phrase.slice(0, --ci);
+        if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; pause = 6; }
+        setTimeout(type, 35);
+    }
+}
+setTimeout(type, 1200);
+
+// ===================== SCROLL REVEAL =====================
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ===================== PLATFORM TABS =====================
+const tabs  = document.querySelectorAll('.platform-tab');
+const panels = document.querySelectorAll('.platform-panel');
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+});
+
+// Hero download button → scroll + activate matching tab
+document.getElementById('hero-download-win').addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('install').scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-windows').classList.add('active');
+        document.getElementById('panel-windows').classList.add('active');
+    }, 400);
+});
+
+// ===================== COPY BUTTONS =====================
+document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const text = btn.dataset.copy.replace(/&#10;/g, '\n');
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = 'copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+        });
+    });
+});
+</script>
+</body>
+</html>
