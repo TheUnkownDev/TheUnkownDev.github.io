@@ -111,7 +111,8 @@
             transition: all 0.2s;
         }
         .nav-link:hover { color: #fff; border-color: var(--border); background: var(--surface); }
-        .nav-link.active { color: #fff; border-color: var(--border); background: var(--surface); }
+        .nav-link.active { color: var(--neon); border-color: var(--neon-glow); background: var(--neon-dim); }
+        .nav-link.active:hover { color: var(--neon); border-color: var(--neon-glow); background: rgba(0,243,255,0.18); }
         .nav-link.cta {
             color: var(--neon);
             border-color: var(--neon-glow);
@@ -607,7 +608,7 @@
         .footer-copy {
             font-family: 'Fira Code', monospace;
             font-size: 0.72rem;
-            color: #2a2a2a;
+            color: var(--muted);
         }
         .footer-right {
             font-family: 'Fira Code', monospace;
@@ -677,7 +678,7 @@
         </div>
         <div class="hero-stats">
             <div class="stat-item">
-                <div class="stat-num"><span class="stat-value" id="stat-repo-count">3</span><span class="accent">+</span></div>
+                <div class="stat-num"><span class="stat-value" id="stat-repo-count">1</span></div>
                 <div class="stat-label">// repos</div>
             </div>
             <div class="stat-item">
@@ -708,7 +709,7 @@
         <div class="projects-grid">
 
             <!-- JARVIS — Featured -->
-            <a href="jarvis.html"
+            <a href="jarvis"
                class="project-card card-featured reveal d1"
                style="--card-accent: rgba(0,243,255,0.5); --card-accent-border: rgba(0,243,255,0.22); --card-glow: rgba(0,243,255,0.07);"
                id="project-jarvis">
@@ -827,7 +828,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10.226 17.284c-2.965-.36-5.054-2.493-5.054-5.256 0-1.123.404-2.336 1.078-3.144-.292-.741-.247-2.314.09-2.965.898-.112 2.111.36 2.83 1.01.853-.269 1.752-.404 2.853-.404 1.1 0 1.999.135 2.807.382.696-.629 1.932-1.1 2.83-.988.315.606.36 2.179.067 2.942.72.854 1.101 2 1.101 3.167 0 2.763-2.089 4.852-5.098 5.234.763.494 1.28 1.572 1.28 2.807v2.336c0 .674.561 1.056 1.235.786 4.066-1.55 7.255-5.615 7.255-10.646C23.5 6.188 18.334 1 11.978 1 5.62 1 .5 6.188.5 12.545c0 4.986 3.167 9.12 7.435 10.669.606.225 1.19-.18 1.19-.786V20.63a2.9 2.9 0 0 1-1.078.224c-1.483 0-2.359-.808-2.987-2.313-.247-.607-.517-.966-1.034-1.033-.27-.023-.359-.135-.359-.27 0-.27.45-.471.898-.471.652 0 1.213.404 1.797 1.235.45.651.921.943 1.483.943.561 0 .92-.202 1.437-.719.382-.381.674-.718.944-.943"/></svg>
                     GitHub Profile
                 </a>
-                <a href="jarvis.html" class="btn btn-ghost interactive">
+                <a href="jarvis" class="btn btn-ghost interactive">
                     View JARVIS Project
                 </a>
             </div>
@@ -835,11 +836,26 @@
     </div>
 </section>
 
+<!-- Back to top -->
+<a href="#home" id="back-top" title="Back to top" style="
+    position: fixed; bottom: 28px; right: 28px;
+    width: 42px; height: 42px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted2); font-size: 1.1rem;
+    text-decoration: none;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s, border-color 0.2s, color 0.2s;
+    z-index: 500;
+" class="interactive">↑</a>
+
 <!-- ======== FOOTER ======== -->
 <footer>
     <div class="footer-inner">
         <div class="footer-copy">© <span id="footer-year">2026</span> TheUnknownDev — All rights reserved.</div>
-        <div class="footer-right">Built from the shadows // <span>theunknowndev.is-a.dev</span></div>
+        <div class="footer-right">Built from the shadows // <span>theunkowndev.github.io</span></div>
     </div>
 </footer>
 
@@ -944,6 +960,22 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     });
 });
 
+// ===== BACK TO TOP BUTTON =====
+const backTop = document.getElementById('back-top');
+window.addEventListener('scroll', () => {
+    const show = window.scrollY > 400;
+    backTop.style.opacity = show ? '1' : '0';
+    backTop.style.pointerEvents = show ? 'auto' : 'none';
+}, { passive: true });
+backTop.addEventListener('mouseenter', () => {
+    backTop.style.borderColor = 'var(--neon-glow)';
+    backTop.style.color = 'var(--neon)';
+});
+backTop.addEventListener('mouseleave', () => {
+    backTop.style.borderColor = 'var(--border)';
+    backTop.style.color = 'var(--muted2)';
+});
+
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -1020,7 +1052,7 @@ async function hydrateFromGitHub() {
         const user = await userRes.json();
         const reposAll = await reposRes.json();
 
-        const repoCount = Number.isFinite(user.public_repos) ? user.public_repos : reposAll.length;
+        const repoCount = Math.max(1, (Number.isFinite(user.public_repos) ? user.public_repos : reposAll.length) - 2);
         $('#stat-repo-count').textContent = String(repoCount);
 
         const pinned = [
@@ -1048,7 +1080,12 @@ async function hydrateFromGitHub() {
 
         const repos = reposAll.filter(r => !r.fork || pinnedByName.has(String(r.name).toLowerCase()));
 
-        const featuredNames = new Set(['j.a.r.v.i.s.-ai-assistant', 'j.a.r.v.i.s.-ai-assistant-main', 'j.a.r.v.i.s.-ai-assistant']);
+        const featuredNames = new Set([
+            'j.a.r.v.i.s.-ai-assistant',
+            'j.a.r.v.i.s.-ai-assistant-main',
+            'theunkowndev.github.io',
+            'register'
+        ]);
 
         const sorted = repos
             .filter(r => !featuredNames.has(String(r.name).toLowerCase()))
